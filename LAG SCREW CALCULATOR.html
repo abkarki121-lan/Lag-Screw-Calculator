@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lag Screw Capacity Report</title>
+
+<style>
+/* --- SCREEN STYLES (What you see on your monitor) --- */
+body{
+    font-family:Arial,Helvetica,sans-serif;
+    background:#eef3f7;
+    margin:0;
+    padding:30px;
+}
+
+.container{
+    max-width:600px;
+    margin:auto;
+    background:#fff;
+    padding:30px;
+    border-radius:10px;
+    box-shadow:0 0 15px rgba(0,0,0,.2);
+}
+
+h2{
+    text-align:center;
+    color:#0b5394;
+    margin-bottom:5px;
+}
+
+.subtitle {
+    text-align:center;
+    color:#666;
+    margin-bottom:25px;
+    font-size: 14px;
+}
+
+label{
+    font-weight:bold;
+    display:block;
+    margin-top:15px;
+}
+
+select{
+    width:100%;
+    padding:10px;
+    margin-top:5px;
+    font-size:16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.btn-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 25px;
+}
+
+button{
+    flex: 1;
+    padding:12px;
+    font-size:16px;
+    background:#0b5394;
+    color:white;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-weight: bold;
+}
+
+button.print-btn {
+    background: #38761d;
+}
+
+button:hover{
+    opacity: 0.9;
+}
+
+.result{
+    margin-top:30px;
+    border:2px solid #0b5394;
+    border-radius:5px;
+    padding:20px;
+    background:#f8fbff;
+}
+
+.result h3{
+    margin-top:0;
+    color:#0b5394;
+    border-bottom: 2px solid #0b5394;
+    padding-bottom: 10px;
+}
+
+.report-details {
+    margin-bottom: 15px;
+    line-height: 1.6;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top: 15px;
+}
+
+th,td{
+    border:1px solid #ccc;
+    padding:10px;
+    text-align:center;
+}
+
+th{
+    background:#0b5394;
+    color:white;
+}
+
+/* --- PRINT STYLES (What the printer sees) --- */
+@page {
+    size: A4;
+    margin: 20mm;
+}
+
+@media print {
+    body {
+        background: white;
+        padding: 0;
+        margin: 0;
+    }
+    .container {
+        box-shadow: none;
+        border: none;
+        max-width: 100%;
+        padding: 0;
+    }
+    
+    /* Hide the interactive form elements and buttons when printing */
+    .no-print {
+        display: none !important;
+    }
+
+    .result {
+        border: none;
+        background: white;
+        padding: 0;
+        margin-top: 0;
+    }
+
+    th {
+        background: #eee !important;
+        color: #000 !important;
+        -webkit-print-color-adjust: exact;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>Lag Screw Capacity Record</h2>
+<div class="subtitle">Structural Connection Design Parameters</div>
+
+<div class="no-print">
+    <label>Force Type</label>
+    <select id="forceType">
+        <option value="withdrawal">Withdrawal (Tension)</option>
+        <option value="shear">Lateral (Shear)</option>
+    </select>
+
+    <label>Lag Screw Diameter</label>
+    <select id="dia">
+        <option value="3/4">3/4"</option>
+        <option value="5/8">5/8"</option>
+        <option value="1/2">1/2"</option>
+        <option value="7/16">7/16"</option>
+        <option value="3/8">3/8"</option>
+        <option value="5/16">5/16"</option>
+        <option value="1/4">1/4"</option>
+    </select>
+
+    <label>Embedment (in.)</label>
+    <select id="embedment"></select>
+
+    <div class="btn-container">
+        <button onclick="calculate()">Calculate</button>
+        <button class="print-btn" onclick="window.print()">Print A4 Report</button>
+    </div>
+</div>
+
+<div class="result" id="result">
+    <h3>Calculation Report</h3>
+    
+    <div class="report-details">
+        <strong>Primary Member:</strong> Wood (Southern Pine)<br>
+        <strong>Secondary Member:</strong> Steel
+    </div>
+
+    <table>
+        <tr>
+            <th>Diameter</th>
+            <th>Embedment</th>
+            <th>Force Type</th>
+            <th>Capacity (lb)</th>
+        </tr>
+        <tr>
+            <td id="rDia">-</td>
+            <td id="rEmbed">-</td>
+            <td id="rType">-</td>
+            <td id="rValue" style="font-weight:bold;">-</td>
+        </tr>
+    </table>
+</div>
+
+</div>
+
+<script>
+const data={
+    "3/4":{
+        6:{shear:1100,withdrawal:1776},
+        7:{shear:1100,withdrawal:2072},
+        8:{shear:1100,withdrawal:2368}
+    },
+    "5/8":{
+        5:{shear:780,withdrawal:1338},
+        6:{shear:780,withdrawal:1596},
+        7:{shear:780,withdrawal:1854},
+        8:{shear:780,withdrawal:2112}
+    },
+    "1/2":{
+        4:{shear:540,withdrawal:955},
+        5:{shear:540,withdrawal:1174},
+        6:{shear:540,withdrawal:1392},
+        7:{shear:540,withdrawal:1611},
+        8:{shear:540,withdrawal:1829}
+    },
+    "7/16":{
+        4:{shear:440,withdrawal:876},
+        5:{shear:440,withdrawal:1073},
+        6:{shear:440,withdrawal:1271},
+        7:{shear:440,withdrawal:1468},
+        8:{shear:440,withdrawal:1666},
+        9:{shear:440,withdrawal:1863}
+    },
+    "3/8":{
+        2.5:{shear:290,withdrawal:539},
+        3:{shear:290,withdrawal:627},
+        4:{shear:290,withdrawal:803},
+        5:{shear:290,withdrawal:979},
+        6:{shear:290,withdrawal:1155},
+        7:{shear:290,withdrawal:1331},
+        8:{shear:290,withdrawal:1507},
+        9:{shear:290,withdrawal:1683}
+    },
+    "5/16":{
+        2:{shear:280,withdrawal:402},
+        2.5:{shear:280,withdrawal:479},
+        3:{shear:280,withdrawal:556},
+        4:{shear:280,withdrawal:709},
+        5:{shear:280,withdrawal:863},
+        6:{shear:280,withdrawal:1016},
+        7:{shear:280,withdrawal:1170},
+        8:{shear:280,withdrawal:1323},
+        9:{shear:280,withdrawal:1477},
+        10:{shear:280,withdrawal:1630}
+    },
+    "1/4":{
+        1.5:{shear:220,withdrawal:284},
+        2:{shear:220,withdrawal:349},
+        2.5:{shear:220,withdrawal:414},
+        3:{shear:220,withdrawal:479},
+        4:{shear:220,withdrawal:609},
+        5:{shear:220,withdrawal:739},
+        6:{shear:220,withdrawal:869},
+        7:{shear:220,withdrawal:999},
+        8:{shear:220,withdrawal:1129},
+        9:{shear:220,withdrawal:1259},
+        10:{shear:220,withdrawal:1389}
+    }
+};
+
+const embedments={
+    "3/4":[6,7,8],
+    "5/8":[5,6,7,8],
+    "1/2":[4,5,6,7,8],
+    "7/16":[4,5,6,7,8,9],
+    "3/8":[2.5,3,4,5,6,7,8,9],
+    "5/16":[2,2.5,3,4,5,6,7,8,9,10],
+    "1/4":[1.5,2,2.5,3,4,5,6,7,8,9,10]
+};
+
+function updateEmbedment(){
+    let dia=document.getElementById("dia").value;
+    let embed=document.getElementById("embedment");
+    
+    embed.innerHTML="";
+    
+    embedments[dia].forEach(function(value){
+        let option=document.createElement("option");
+        option.value=value;
+        option.text=value+" in.";
+        embed.appendChild(option);
+    });
+}
+
+document.getElementById("dia").addEventListener("change",updateEmbedment);
+updateEmbedment();
+
+function calculate(){
+    let dia=document.getElementById("dia").value;
+    let embed=document.getElementById("embedment").value;
+    let type=document.getElementById("forceType").value;
+    let value=data[dia][embed][type];
+    
+    document.getElementById("rDia").innerHTML=dia+'"';
+    document.getElementById("rEmbed").innerHTML=embed+' in.';
+    document.getElementById("rType").innerHTML=(type=="shear")?"Lateral Shear":"Withdrawal";
+    document.getElementById("rValue").innerHTML=value+" lb";
+}
+</script>
+
+</body>
+</html>
